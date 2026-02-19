@@ -180,7 +180,7 @@ export default function Home() {
       setChatByResultKey({});
       setChatInputByResultKey({});
     } catch {
-      setError("Could not load local results right now.");
+      setError("Could not load live results right now.");
       setResults([]);
     } finally {
       setIsLoading(false);
@@ -240,7 +240,7 @@ export default function Home() {
         <section className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">No Man&apos;s Sky Companion</h1>
           <p className="text-sm text-zinc-600 dark:text-zinc-300">
-            Local-only mode: all guidance stays inside the app with no outbound links.
+            Live search mode: guidance is compiled in-app with no outbound links.
           </p>
         </section>
 
@@ -299,7 +299,7 @@ export default function Home() {
             <h2 className="text-lg font-semibold">Results</h2>
             {results.length === 0 ? (
               <p className="rounded-xl border border-dashed border-zinc-300 p-4 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
-                Search for something to see local knowledge results.
+                Search for something to see live compiled results.
               </p>
             ) : (
               <ul className="space-y-3">
