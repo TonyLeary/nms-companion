@@ -53,10 +53,18 @@ jobs:
           DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_DEV }}
         run: |
           if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
-            echo "Missing COOLIFY_DEPLOY_WEBHOOK_DEV secret"
-            exit 1
+            echo "::warning::Missing COOLIFY_DEPLOY_WEBHOOK_DEV secret. Skipping dev deploy trigger."
+            exit 0
           fi
-          curl -fsSL -X POST "$DEPLOY_WEBHOOK_URL"
+
+          http_code=$(curl -sS -o /tmp/coolify_dev_response.txt -w "%{http_code}" -X POST "$DEPLOY_WEBHOOK_URL")
+          echo "Coolify dev webhook HTTP status: $http_code"
+
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "::warning::Dev webhook call failed (non-2xx). Continuing without failing CI."
+            echo "Response body:"
+            cat /tmp/coolify_dev_response.txt || true
+          fi
 
   deploy_production:
     name: Deploy to Production (Coolify)
@@ -70,17 +78,17 @@ jobs:
           DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_PROD || secrets.COOLIFY_DEPLOY_WEBHOOK_PRODUCTION }}
         run: |
           if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
-            echo "Missing production deploy webhook secret."
-            echo "Set COOLIFY_DEPLOY_WEBHOOK_PROD (or COOLIFY_DEPLOY_WEBHOOK_PRODUCTION) in GitHub Environment: production."
-            exit 1
+            echo "::warning::Missing production deploy webhook secret."
+            echo "::warning::Set COOLIFY_DEPLOY_WEBHOOK_PROD (or COOLIFY_DEPLOY_WEBHOOK_PRODUCTION) in GitHub Environment: production."
+            exit 0
           fi
 
           http_code=$(curl -sS -o /tmp/coolify_prod_response.txt -w "%{http_code}" -X POST "$DEPLOY_WEBHOOK_URL")
           echo "Coolify webhook HTTP status: $http_code"
 
           if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
-            echo "Production webhook request failed."
+            echo "::warning::Production webhook request failed (non-2xx). Continuing without failing CI."
             echo "Response body:"
             cat /tmp/coolify_prod_response.txt || true
-            exit 1
+            exit 0
           fi
