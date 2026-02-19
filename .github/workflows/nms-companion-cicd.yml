@@ -67,10 +67,20 @@ jobs:
     steps:
       - name: Trigger Coolify production deploy webhook
         env:
-          DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_PROD }}
+          DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_PROD || secrets.COOLIFY_DEPLOY_WEBHOOK_PRODUCTION }}
         run: |
           if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
-            echo "Missing COOLIFY_DEPLOY_WEBHOOK_PROD secret"
+            echo "Missing production deploy webhook secret."
+            echo "Set COOLIFY_DEPLOY_WEBHOOK_PROD (or COOLIFY_DEPLOY_WEBHOOK_PRODUCTION) in GitHub Environment: production."
             exit 1
           fi
-          curl -fsSL -X POST "$DEPLOY_WEBHOOK_URL"
+
+          http_code=$(curl -sS -o /tmp/coolify_prod_response.txt -w "%{http_code}" -X POST "$DEPLOY_WEBHOOK_URL")
+          echo "Coolify webhook HTTP status: $http_code"
+
+          if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+            echo "Production webhook request failed."
+            echo "Response body:"
+            cat /tmp/coolify_prod_response.txt || true
+            exit 1
+          fi
