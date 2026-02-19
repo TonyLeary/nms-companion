@@ -1,0 +1,76 @@
+name: NMS Companion CI/CD
+
+on:
+  push:
+    branches:
+      - dev
+      - main
+  pull_request:
+    branches:
+      - dev
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nms-companion-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build_test:
+    name: Lint and Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  deploy_dev:
+    name: Deploy to Dev (Coolify)
+    runs-on: ubuntu-latest
+    needs: build_test
+    if: github.ref == 'refs/heads/dev' && github.event_name != 'pull_request'
+    environment: dev
+    steps:
+      - name: Trigger Coolify dev deploy webhook
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_DEV }}
+        run: |
+          if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "Missing COOLIFY_DEPLOY_WEBHOOK_DEV secret"
+            exit 1
+          fi
+          curl -fsSL -X POST "$DEPLOY_WEBHOOK_URL"
+
+  deploy_production:
+    name: Deploy to Production (Coolify)
+    runs-on: ubuntu-latest
+    needs: build_test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    environment: production
+    steps:
+      - name: Trigger Coolify production deploy webhook
+        env:
+          DEPLOY_WEBHOOK_URL: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK_PROD }}
+        run: |
+          if [ -z "$DEPLOY_WEBHOOK_URL" ]; then
+            echo "Missing COOLIFY_DEPLOY_WEBHOOK_PROD secret"
+            exit 1
+          fi
+          curl -fsSL -X POST "$DEPLOY_WEBHOOK_URL"
