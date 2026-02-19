@@ -2,6 +2,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 type SearchType = "howto" | "where";
 
+const MODE_KEYWORDS: Record<SearchType, string[]> = {
+  howto: ["how", "craft", "build", "farm", "route", "method", "loop", "efficient", "best", "guide"],
+  where: ["where", "find", "location", "planet", "system", "station", "spawn", "drop", "vendor"],
+};
+
+const META_TITLE_KEYWORDS = [
+  "expedition",
+  "update",
+  "review",
+  "screenshot",
+  "photo",
+  "showcase",
+  "trailer",
+  "impressions",
+];
+
 type VideoClip = {
   mode: "storyboard";
   title: string;
@@ -10,19 +26,6 @@ type VideoClip = {
     label: string;
     detail: string;
   }>;
-};
-
-type KnowledgeEntry = {
-  id: string;
-  title: string;
-  aliases: string[];
-  whereToFind: string;
-  howToUse: string;
-  tips: string[];
-  references: string[];
-  redditNotes: string[];
-  faq: Array<{ question: string; answer: string }>;
-  video?: VideoClip;
 };
 
 type SearchResult = {
@@ -37,195 +40,22 @@ type SearchResult = {
   video?: VideoClip;
 };
 
-const LOCAL_KNOWLEDGE: KnowledgeEntry[] = [
-  {
-    id: "radiant-heart",
-    title: "Radiant Heart",
-    aliases: ["radiant heart", "radiant hearts", "sentinel heart"],
-    whereToFind:
-      "Radiant Hearts are commonly earned from Sentinel combat loops, especially in corrupted zones and high-alert Sentinel areas.",
-    howToUse:
-      "Used in advanced crafting and upgrade paths tied to Sentinel-related technology and high-tier progression components.",
-    tips: [
-      "Use a Sentinel Pillar area as a repeatable combat route.",
-      "Carry ammo and shield recharge so you can farm multiple waves in one run.",
-      "Deposit rare drops often if inventory is tight.",
-    ],
-    references: ["No Man's Sky Wiki (internal summary)", "Community route notes (internal summary)"],
-    redditNotes: [
-      "Players often report best drop consistency from sustained Sentinel wave clears.",
-      "Many community routes pair Sentinel farms with nearby salvage stops.",
-    ],
-    faq: [
-      {
-        question: "What is the fastest way to farm Radiant Hearts?",
-        answer:
-          "A strong loop is repeating Sentinel wave combat near a Pillar, collecting drops, then resetting at another hotspot.",
-      },
-      {
-        question: "Do I need a specific biome for Radiant Hearts?",
-        answer:
-          "Not strictly, but corrupted or high-Sentinel-pressure zones usually feel most consistent.",
-      },
-    ],
-    video: {
-      mode: "storyboard",
-      title: "Sentinel farming route example",
-      note:
-        "In-app storyboard guide. No external video service required.",
-      segments: [
-        {
-          label: "00:00 - Prep",
-          detail: "Land near a Sentinel Pillar, reload ammo, and verify shield recharge supply.",
-        },
-        {
-          label: "00:40 - Trigger",
-          detail: "Start Sentinel engagement and maintain line-of-sight control instead of over-chasing.",
-        },
-        {
-          label: "01:30 - Collect",
-          detail: "Sweep drops between waves and keep one free inventory row for fast looting.",
-        },
-        {
-          label: "02:20 - Reset Loop",
-          detail: "Move to the next nearby hotspot and repeat for consistent Radiant Heart farming.",
-        },
-      ],
-    },
-  },
-  {
-    id: "living-glass",
-    title: "Living Glass",
-    aliases: ["living glass", "lg", "farm income"],
-    whereToFind:
-      "Living Glass is usually crafted from plant-chain materials rather than found as a frequent raw pickup.",
-    howToUse:
-      "Useful as a reliable mid-game money craft and for select blueprint requirements.",
-    tips: [
-      "Automate farm ingredients with biodomes or hydroponics.",
-      "Craft in batches after each harvest cycle.",
-      "Keep a dedicated storage tab for farm chain materials.",
-    ],
-    references: ["No Man's Sky crafting chain notes (internal summary)"],
-    redditNotes: [
-      "Community posts frequently suggest Living Glass as a safe early passive income path.",
-    ],
-    faq: [
-      {
-        question: "Is Living Glass better than random loot selling?",
-        answer:
-          "For many players, yes. A stable farm chain can outperform random loot runs in consistency.",
-      },
-    ],
-    video: {
-      mode: "storyboard",
-      title: "Living Glass farm layout walkthrough",
-      note: "In-app storyboard guide. No external video service required.",
-      segments: [
-        {
-          label: "00:00 - Base Layout",
-          detail: "Place biodomes/hydroponics in a tight loop near refiners and storage.",
-        },
-        {
-          label: "00:45 - Crop Balance",
-          detail: "Balance ingredient crops by bottleneck material rather than equal count.",
-        },
-        {
-          label: "01:20 - Batch Craft",
-          detail: "Harvest all, craft components first, then final Living Glass in one pass.",
-        },
-      ],
-    },
-  },
-  {
-    id: "oxygen",
-    title: "Oxygen",
-    aliases: ["oxygen", "o2", "life support"],
-    whereToFind:
-      "Gather from oxygen-rich flora, gas hotspots, and occasional market supply.",
-    howToUse:
-      "Core utility resource for life support and several refining chains.",
-    tips: [
-      "Set up an oxygen extractor base as early infrastructure.",
-      "Carry backup oxygen stacks before long expeditions.",
-    ],
-    references: ["Resource gathering notes (internal summary)"],
-    redditNotes: ["Players commonly prioritize oxygen extraction as an early QoL base."],
-    faq: [
-      {
-        question: "Should I buy oxygen or farm it?",
-        answer:
-          "Buying is fine short-term, but farming becomes more efficient once your base is established.",
-      },
-    ],
-  },
-  {
-    id: "sodium",
-    title: "Sodium",
-    aliases: ["sodium", "hazard protection", "yellow plants"],
-    whereToFind:
-      "Readily harvested from yellow flora on many planets and sometimes purchased at stations or pilots.",
-    howToUse:
-      "Primary hazard protection refill material.",
-    tips: [
-      "Keep one dedicated sodium stack in exosuit inventory at all times.",
-      "Convert to Sodium Nitrate when needed for stronger refills.",
-    ],
-    references: ["Survival resource notes (internal summary)"],
-    redditNotes: ["New-player guides repeatedly emphasize sodium as top-priority carry material."],
-    faq: [
-      {
-        question: "How much sodium should I carry?",
-        answer:
-          "At least one full stack for exploration-heavy sessions, more for harsh biomes.",
-      },
-    ],
-  },
-  {
-    id: "salvaged-data",
-    title: "Salvaged Data",
-    aliases: ["salvaged data", "technology modules", "buried tech"],
-    whereToFind:
-      "Dig up buried technology modules using the Analysis Visor and Terrain Manipulator.",
-    howToUse:
-      "Spent at the Space Anomaly construction terminal to unlock base parts and tech.",
-    tips: [
-      "Scan while moving in a wide loop to chain buried tech finds quickly.",
-      "Prioritize unlocks that improve power, storage, and farming first.",
-    ],
-    references: ["Base progression notes (internal summary)"],
-    redditNotes: ["Community consensus: early Salvaged Data routes accelerate base progression heavily."],
-    faq: [
-      {
-        question: "What should I unlock first with Salvaged Data?",
-        answer:
-          "Most players prioritize power generation, storage, and farming modules first.",
-      },
-    ],
-  },
-  {
-    id: "nanites",
-    title: "Nanites",
-    aliases: ["nanites", "nanite clusters", "upgrade currency"],
-    whereToFind:
-      "Earned from scanning, missions, refining loops, and selling discovered data sources.",
-    howToUse:
-      "Main currency for tech upgrades and class improvements.",
-    tips: [
-      "Stack mission board tasks that reward nanites.",
-      "Use steady micro-loops instead of waiting for one big source.",
-    ],
-    references: ["Upgrade currency notes (internal summary)"],
-    redditNotes: ["Frequent player advice is to combine mission rewards with refining side loops."],
-    faq: [
-      {
-        question: "What is a beginner-friendly nanite loop?",
-        answer:
-          "Combine station missions with fast scan/refine cycles so progress continues while traveling.",
-      },
-    ],
-  },
-];
+type RedditListingResponse = {
+  data?: {
+    children?: Array<{
+      data?: {
+        id?: string;
+        title?: string;
+        selftext?: string;
+        subreddit_name_prefixed?: string;
+        author?: string;
+        score?: number;
+        num_comments?: number;
+        permalink?: string;
+      };
+    }>;
+  };
+};
 
 function normalizeForMatch(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
@@ -234,56 +64,248 @@ function normalizeForMatch(value: string): string {
 function tokenize(value: string): string[] {
   return normalizeForMatch(value)
     .split(" ")
-    .filter((token) => token.length > 1);
+    .filter((token) => token.length > 1)
+    .map((token) => {
+      if (token.length > 4 && token.endsWith("es")) {
+        return token.slice(0, -2);
+      }
+      if (token.length > 3 && token.endsWith("s")) {
+        return token.slice(0, -1);
+      }
+      return token;
+    });
 }
 
-function scoreEntry(entry: KnowledgeEntry, query: string): number {
-  const normalizedQuery = normalizeForMatch(query);
-  const queryTokens = tokenize(query);
-  let score = 0;
-
-  if (normalizeForMatch(entry.title) === normalizedQuery) {
-    score += 120;
-  }
-
-  for (const alias of entry.aliases) {
-    const normalizedAlias = normalizeForMatch(alias);
-    if (normalizedQuery.includes(normalizedAlias)) {
-      score += 80;
-    }
-  }
-
-  const searchable = `${entry.title} ${entry.aliases.join(" ")} ${entry.whereToFind} ${entry.howToUse} ${entry.tips.join(" ")}`;
-  const searchableTokens = tokenize(searchable);
-
-  for (const token of queryTokens) {
-    if (searchableTokens.includes(token)) {
-      score += 12;
-    }
-  }
-
-  return score;
+function stripExternalLinks(value: string): string {
+  return value
+    .replace(/\[[^\]]+\]\((?:https?:\/\/|www\.)[^)]+\)/gi, "")
+    .replace(/(?:https?:\/\/|www\.)\S+/gi, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-function toSearchResult(entry: KnowledgeEntry, type: SearchType): SearchResult {
-  const summary = type === "where" ? entry.whereToFind : entry.howToUse;
+function cleanText(value: string): string {
+  return stripExternalLinks(value)
+    .replace(/&amp;/g, "&")
+    .replace(/[*_`>#~]+/g, "")
+    .replace(/\s*\n\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function polishSentence(value: string): string {
+  return cleanText(value)
+    .replace(/[|]+/g, " ")
+    .replace(/\s*[-–—]{2,}\s*/g, " - ")
+    .replace(/([!?.,])\1{1,}/g, "$1")
+    .replace(/\s+([!?.,;:])/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function splitSentences(value: string): string[] {
+  return polishSentence(value)
+    .split(/(?<=[.!?])\s+/)
+    .map((sentence) => polishSentence(sentence))
+    .filter((sentence) => sentence.length > 0);
+}
+
+function pickBestSentences(
+  sentences: string[],
+  keywordGroups: string[][],
+  fallback: string,
+  count: number,
+): string[] {
+  const ranked = sentences
+    .map((sentence) => {
+      const normalized = normalizeForMatch(sentence);
+      const score = keywordGroups.reduce((sum, group) => {
+        const groupMatch = group.some((keyword) => normalized.includes(keyword));
+        return sum + (groupMatch ? 1 : 0);
+      }, 0);
+      return { sentence, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .filter((item, index) => item.score > 0 || index < count)
+    .slice(0, count)
+    .map((item) => item.sentence);
+
+  return ranked.length > 0 ? ranked : [fallback];
+}
+
+function sanitizeTitle(value: string, query: string): string {
+  const cleaned = polishSentence(value);
+  if (cleaned.length > 0) {
+    return cleaned;
+  }
+
+  return `Community result for ${query}`;
+}
+
+function countTokenOverlap(text: string, queryTokens: string[]): number {
+  if (queryTokens.length === 0) {
+    return 0;
+  }
+
+  const tokenSet = new Set(tokenize(text));
+  return queryTokens.reduce((sum, token) => sum + (tokenSet.has(token) ? 1 : 0), 0);
+}
+
+function countKeywordHits(text: string, keywords: string[]): number {
+  if (keywords.length === 0) {
+    return 0;
+  }
+
+  const tokenSet = new Set(tokenize(text));
+  return keywords.reduce((sum, token) => sum + (tokenSet.has(token) ? 1 : 0), 0);
+}
+
+function hasNmsContext(post: { title?: string; selftext?: string; subreddit_name_prefixed?: string }): boolean {
+  const context = normalizeForMatch(
+    `${post.title ?? ""} ${post.selftext ?? ""} ${post.subreddit_name_prefixed ?? ""}`,
+  );
+
+  return ["no man s sky", "nomanssky", "nms", "anomaly", "sentinel", "atlas"].some((keyword) =>
+    context.includes(keyword),
+  );
+}
+
+function scoreRedditPost(
+  post: { title?: string; selftext?: string; subreddit_name_prefixed?: string; score?: number; num_comments?: number },
+  queryTokens: string[],
+  type: SearchType,
+): number {
+  const title = cleanText(post.title ?? "");
+  const body = cleanText(post.selftext ?? "");
+  const overlapInTitle = countTokenOverlap(title, queryTokens);
+  const overlapInBody = countTokenOverlap(body, queryTokens);
+  const modeHitInTitle = countKeywordHits(title, MODE_KEYWORDS[type]);
+  const modeHitInBody = countKeywordHits(body, MODE_KEYWORDS[type]);
+  const engagement = Math.log10(Math.max((post.score ?? 0) + (post.num_comments ?? 0), 1) + 1);
+  const hasBody = body.length >= 60 ? 1 : 0;
+  const nmsBoost = hasNmsContext(post) ? 2 : 0;
+  const metaHits = countKeywordHits(title, META_TITLE_KEYWORDS);
+  const queryLooksMeta = queryTokens.some((token) => META_TITLE_KEYWORDS.includes(token));
+  const metaPenalty = metaHits > 0 && !queryLooksMeta ? 4 : 0;
+
+  return (
+    overlapInTitle * 10 +
+    overlapInBody * 4 +
+    modeHitInTitle * 3 +
+    modeHitInBody * 1.5 +
+    engagement * 2 +
+    hasBody +
+    nmsBoost -
+    metaPenalty
+  );
+}
+
+async function fetchRedditPosts(query: string): Promise<RedditListingResponse> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const params = new URLSearchParams({
+      q: query,
+      sort: "relevance",
+      t: "year",
+      limit: "24",
+      restrict_sr: "on",
+      include_over_18: "off",
+      raw_json: "1",
+    });
+
+    const response = await fetch(`https://www.reddit.com/r/NoMansSkyTheGame/search.json?${params.toString()}`, {
+      headers: {
+        "User-Agent": "nms-companion/0.1 (live-search)",
+      },
+      signal: controller.signal,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return {};
+    }
+
+    return (await response.json()) as RedditListingResponse;
+  } catch {
+    return {};
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function toSearchResultFromReddit(
+  post: NonNullable<NonNullable<RedditListingResponse["data"]>["children"]>[number]["data"],
+  query: string,
+  type: SearchType,
+): SearchResult {
+  const title = sanitizeTitle(post?.title ?? "", query);
+  const body = polishSentence(post?.selftext ?? "");
+  const allText = polishSentence(`${title}. ${body}`);
+  const sentences = splitSentences(allText);
+
+  const whereLines = pickBestSentences(
+    sentences,
+    [
+      ["where", "find", "found", "location", "planet", "system", "station", "biome"],
+      ["farm", "drop", "spawn", "sentinel", "anomaly", "vendor", "market"],
+    ],
+    "Community reports suggest checking mission hubs, planets matching the resource biome, and station trade loops.",
+    2,
+  );
+
+  const howLines = pickBestSentences(
+    sentences,
+    [
+      ["how", "use", "craft", "build", "route", "method", "loop"],
+      ["tip", "best", "fast", "efficient", "priority", "upgrade"],
+    ],
+    "Community advice generally favors repeatable loops, inventory prep, and stacking compatible mission objectives.",
+    2,
+  );
+
+  const tipCandidates = pickBestSentences(
+    sentences,
+    [["tip", "best", "fast", "efficient", "carry", "stack", "prioritize", "avoid"]],
+    "Keep route loops short and inventory space ready for faster farming cycles.",
+    3,
+  );
+
+  const summary = polishSentence(type === "where" ? whereLines[0] : howLines[0]);
   const details = [
-    `Where to find: ${entry.whereToFind}`,
-    `How to use: ${entry.howToUse}`,
+    `Where to find: ${whereLines.join(" ")}`,
+    `How to use: ${howLines.join(" ")}`,
     "Tips:",
-    ...entry.tips.map((tip) => `- ${tip}`),
+    ...tipCandidates.map((tip) => `- ${polishSentence(tip)}`),
   ].join("\n");
 
+  const subreddit = cleanText(post?.subreddit_name_prefixed ?? "r/NoMansSkyTheGame") || "r/NoMansSkyTheGame";
+  const author = cleanText(post?.author ?? "unknown");
+  const score = typeof post?.score === "number" ? post.score : 0;
+  const comments = typeof post?.num_comments === "number" ? post.num_comments : 0;
+
   return {
-    id: entry.id,
-    title: entry.title,
+    id: `reddit-${post?.id ?? normalizeForMatch(title).replace(/\s+/g, "-")}`,
+    title,
     summary,
     details,
-    source: "NMS Local KB",
-    references: entry.references,
-    redditNotes: entry.redditNotes,
-    faq: entry.faq,
-    video: entry.video,
+    source: "Live Community Search",
+    references: [
+      `Source set: Reddit live snapshot`,
+      `Forum: ${subreddit}`,
+      `Engagement: score ${score}, comments ${comments}`,
+    ],
+    redditNotes: [
+      `Author: u/${author}`,
+      "External URLs are intentionally removed from this app output.",
+    ],
+    faq: [
+      {
+        question: `How current is this guidance for ${query}?`,
+        answer: "It is compiled from live community posts at request time and summarized in-app without outbound links.",
+      },
+    ],
   };
 }
 
@@ -291,23 +313,23 @@ function buildNoMatchResult(query: string, type: SearchType): SearchResult {
   const modeLabel = type === "where" ? "where-to-find" : "how-to";
   return {
     id: `no-match-${normalizeForMatch(query).replace(/\s+/g, "-") || "query"}`,
-    title: `No exact local match for "${query}" yet`,
-    summary: "Try a shorter name, singular form, or a nearby material/blueprint term.",
+    title: `No live community match for "${query}" yet`,
+    summary: "Try fewer words, singular terms, or the base material/item name.",
     details: [
-      `The app is in local-only mode, so it only searches built-in data.`,
+      "Live search returned no strong match in this pass.",
       `Mode used: ${modeLabel}.`,
       "Suggested next tries:",
-      "- Remove extra words (example: use \"radiant heart\" instead of full sentence).",
-      "- Search by ingredient or output item.",
-      "- Ask a follow-up question in this card so the app can guide alternatives.",
+      '- Use a compact term (example: "radiant heart" instead of full sentence).',
+      "- Try item, then process (example: nanites, then nanite farm).",
+      "- Ask a follow-up in this card and refine step-by-step.",
     ].join("\n"),
-    source: "NMS Local KB",
-    references: ["Local knowledge base only"],
-    redditNotes: ["Reddit references are summarized in-app only; no outbound links are provided."],
+    source: "Live Community Search",
+    references: ["Live snapshot only"],
+    redditNotes: ["Community data may be available on retry; all external links are removed by design."],
     faq: [
       {
-        question: "Can I still use Reddit info without opening Reddit?",
-        answer: "Yes. The app can include summarized Reddit-derived notes inside result details.",
+        question: "Can this still use Reddit data without links?",
+        answer: "Yes. Results can include Reddit-derived summaries while hiding outbound URLs.",
       },
     ],
   };
@@ -322,17 +344,50 @@ export async function GET(request: NextRequest) {
   }
 
   const type: SearchType = typeParam === "where" ? "where" : "howto";
+  const queryTokens = tokenize(query);
 
-  const scored = LOCAL_KNOWLEDGE.map((entry) => ({
-    entry,
-    score: scoreEntry(entry, query),
-  }))
-    .filter((item) => item.score > 0)
-    .sort((left, right) => right.score - left.score)
+  const redditPayload = await fetchRedditPosts(query);
+  const dedupedRanked = (redditPayload.data?.children ?? [])
+    .map((child) => child.data)
+    .filter((post): post is NonNullable<typeof post> => Boolean(post?.id && post?.title))
+    .map((post) => ({
+      post,
+      qualityScore: scoreRedditPost(post, queryTokens, type),
+      overlapTitle: countTokenOverlap(post.title ?? "", queryTokens),
+      overlap: countTokenOverlap(`${post.title ?? ""} ${post.selftext ?? ""}`, queryTokens),
+    }))
+    .filter((item) => {
+      if (queryTokens.length === 0) {
+        return true;
+      }
+
+      const minCoverage = Math.max(1, Math.ceil(queryTokens.length * 0.5));
+      const hasStrongCoverage = item.overlap >= minCoverage;
+      const hasTitleHit = item.overlapTitle >= 1;
+      const hasUsefulSignal = item.qualityScore >= 7;
+
+      if (queryTokens.length === 1) {
+        return hasTitleHit && hasUsefulSignal;
+      }
+
+      const hasTitleOrVeryStrongBody = hasTitleHit || item.overlap >= minCoverage + 1;
+      return hasStrongCoverage && hasTitleOrVeryStrongBody && hasUsefulSignal && hasTitleHit;
+    })
+    .sort((left, right) => right.qualityScore - left.qualityScore)
+    .filter((item, index, all) => {
+      const normalizedTitle = normalizeForMatch(item.post.title ?? "");
+      if (!normalizedTitle) {
+        return index === 0;
+      }
+
+      return all.findIndex((entry) => normalizeForMatch(entry.post.title ?? "") === normalizedTitle) === index;
+    });
+
+  const redditResults = dedupedRanked
     .slice(0, 8)
-    .map((item) => toSearchResult(item.entry, type));
+    .map((item) => toSearchResultFromReddit(item.post, query, type));
 
-  const results = scored.length > 0 ? scored : [buildNoMatchResult(query, type)];
+  const results = redditResults.length > 0 ? redditResults : [buildNoMatchResult(query, type)];
 
   return NextResponse.json({
     query,

@@ -10,7 +10,7 @@ The app is responsive for desktop, tablet, and mobile and can be installed as a 
 ## MVP Features
 
 - Single search box with mode toggle (`How-to` / `Where-to-find`)
-- Local-only knowledge base search (no outbound source links)
+- Live compiled community search (no outbound source links)
 - Expand/collapse in-app details on each result card
 - In-app summarized references, including Reddit-derived notes
 - In-app video storyboard guides (no external video service required)
@@ -35,6 +35,6 @@ npm run start
 
 ## Notes
 
-- Search uses built-in local data only.
+- Search compiles live community data at request time.
 - External links are intentionally removed from the UI.
 - Favorites are currently stored locally per browser/device.
