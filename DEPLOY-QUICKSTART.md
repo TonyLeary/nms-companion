@@ -1,4 +1,4 @@
-# NMS Companion Cloud Quickstart (Under $20/month)
+# NMS Companion Deployment Quickstart (Hetzner + Coolify)
 
 This path uses one Hetzner VPS + Coolify + Squarespace DNS.
 

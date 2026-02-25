@@ -7,6 +7,16 @@ No Man's Sky companion app focused on quick search for:
 
 The app is responsive for desktop, tablet, and mobile and can be installed as a basic web app.
 
+## Shared Production Workflow
+
+This app follows the parent FamilyOS deployment standard:
+
+- `c:\dev\deployment-workflow\README.md`
+- `c:\dev\deployment-workflow\00-standard-production-workflow.md`
+- `c:\dev\deployment-workflow\01-app-onboarding-checklist.md`
+
+For this repo, use app key `nms` and target URL `https://nms.amlapps.net` (DNS/infrastructure domain).
+
 ## MVP Features
 
 - Single search box with mode toggle (`How-to` / `Where-to-find`)
